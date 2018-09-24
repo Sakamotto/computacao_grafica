@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1537234864 source:c:\users\cristian\documents\ifes\8º período\tecg\glutwindows\trabalho1.c
+	<stdio.h>
+	<stdlib.h>
+
+1537508812 source:c:\users\cristian\documents\ifes\8º período\tecg\glutwindows\main.cpp
+	<GLUT/glut.h>
+	<windows.h>
+	<GL/glut.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<time.h>
+
+976663372 c:\users\cristian\documents\ifes\8º período\tecg\glutcb\include\gl\glut.h
+	<windows.h>
+	<GL/gl.h>
+	<GL/glu.h>
+
