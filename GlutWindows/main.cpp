@@ -32,12 +32,13 @@ int tam_vet_vertices = 34834;
 
 float x_min, y_min, z_min, x_max, y_max, z_max;
 
-int FPS = 0, tempo_inicial = time(NULL), tempo_final;
+int FPS = 0;
+float tempo_inicial = 0.0, tempo_final = 0.0;
 
 float vet_vertices[34834][6];
 int vet_triangulos[69664][3];
 
-//Função que desenha em tela nas posições X e Y, um texto.
+//FunÃ§Ã£o que desenha em tela nas posiÃ§Ãµes X e Y, um texto.
 static void printGL(int x, int y, char *str)
 {
 
@@ -147,7 +148,8 @@ static void resize(int width, int height)
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-ar, ar, -1.0, 1.0, 2.0, 100.0);
+//    glFrustum(-ar, ar, -1.0, 1.0, 0.0001, 100.0);
+    gluPerspective(60, ar, 0.01, 10000);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity() ;
@@ -155,39 +157,54 @@ static void resize(int width, int height)
 
 static void display(void)
 {
-    const double t = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-    const double a = t*90.0;
+    const double elapsed_time = glutGet(GLUT_ELAPSED_TIME);
+    const double a = (elapsed_time/1000)*30.0;
     int teste = 0;
 
+    tempo_inicial = elapsed_time - tempo_final;
+    tempo_final = elapsed_time;
+
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glMatrixMode(GL_PROJECTION);
     glColor3d(1,0,0);
+    glLoadIdentity(); // Limpa as tranformaÃ§Ãµes anteriores
+    glTranslatef(0, 0, -2);
+
+    glPushMatrix();
+    glRotated(a,0,0.5,0); // Rotaciona de 1 em 1 grau em torno do eixo Y
+
+    glTranslatef(-(x_min + x_max) / 2,
+                    -(y_min + y_max) / 2,
+                    -(z_min + z_max) / 2);
 
     for(int i = 0; i < tam_vet_triangulos; i++){
         glBegin(GL_TRIANGLES);
         for(int j = 0; j < 3; j++){
-            glVertex3f( vet_vertices[vet_triangulos[i][j]][0] - (x_min + x_max / 2),
-                    vet_vertices[vet_triangulos[i][j]][1] - (y_min + y_max / 2),
-                    vet_vertices[vet_triangulos[i][j]][2] - (z_min + z_max / 2));
-
             glNormal3f(vet_vertices[vet_triangulos[i][j]][3],
                     vet_vertices[vet_triangulos[i][j]][4],
                     vet_vertices[vet_triangulos[i][j]][5] );
+
+            glVertex3f( vet_vertices[vet_triangulos[i][j]][0],
+                        vet_vertices[vet_triangulos[i][j]][1],
+                        vet_vertices[vet_triangulos[i][j]][2]);
         }
         glEnd();
     }
-    glRotated(0.2,0,0.5,0); // Rotaciona de 1 em 1 grau em torno do eixo Y
+    glPopMatrix();
+
+
 
     FPS++;
-    tempo_final = time(NULL);
+    //tempo_final = time(NULL);
     char buffer[20];
-    if(tempo_final - tempo_inicial > 0){
-        itoa((FPS / (tempo_final - tempo_inicial)), buffer, 10);
-        FPS = 0;
-        tempo_inicial = tempo_final;
+//    printf("Tempo Inicial: %f  |  Tempo Final: %f\n", tempo_inicial, tempo_final);
+    if(tempo_inicial > 1.0){
+//        printf("Tempo Inicial: %f", tempo_inicial);
+//        scanf("%d", &teste);
+        itoa((tempo_inicial*10), buffer, 10);
+//        FPS = 0;
+//        tempo_inicial = tempo_final;
+        printGL(20, 20, buffer);
     }
-
-    printGL(20, 20, buffer);
     glutSwapBuffers();
 }
 
@@ -238,8 +255,12 @@ const GLfloat high_shininess[] = { 100.0f };
 int main(int argc, char *argv[])
 {
 //    lerArquivo("C:\\Users\\Aevo\\Documents\\Cristian\\Trabalho_TECG\\bunny.msh.txt");
-    lerArquivo("C:\\Users\\Cristian\\Documents\\IFES\\bunny.msh.txt");
-    getMinMax(); // obtém as coordenadas (x,y,z) min e max
+    lerArquivo("C:\\Users\\20142bsi0054\\Documents\\TECG\\bunny.msh.txt");
+    getMinMax(); // obtÃ©m as coordenadas (x,y,z) min e max
+
+    printf("X_MIN: %f, Y_MIN: %f, Z_MIN: %f\n", x_min, y_min, z_min);
+    printf("MÃ©dia: %f\n", (x_min + x_max) / 2);
+    printf("X_MAX: %f, Y_MAX: %f, Z_MAX: %f\n", x_max, y_max, z_max);
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
@@ -249,7 +270,7 @@ int main(int argc, char *argv[])
 
 
     glutDisplayFunc(display);
-    //glutReshapeFunc(resize);
+    glutReshapeFunc(resize);
     glutKeyboardFunc(key);
     glutIdleFunc(idle);
 
