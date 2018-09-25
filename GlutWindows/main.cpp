@@ -21,14 +21,16 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
+#include <string.h>
 
 static int slices = 16;
 static int stacks = 16;
 
 int tam_vet_triangulos = 69664;
 int tam_vet_vertices = 34834;
+
+float x_min, y_min, z_min, x_max, y_max, z_max;
 
 int FPS = 0, tempo_inicial = time(NULL), tempo_final;
 
@@ -112,6 +114,29 @@ void lerArquivo(char* path){
 
 }
 
+
+void getMinMax(){
+    x_min = vet_vertices[vet_triangulos[0][0]][0];
+    y_min = vet_vertices[vet_triangulos[0][0]][1];
+    z_min = vet_vertices[vet_triangulos[0][0]][2];
+
+    x_max = vet_vertices[vet_triangulos[0][0]][0];
+    y_max = vet_vertices[vet_triangulos[0][0]][1];
+    z_max = vet_vertices[vet_triangulos[0][0]][2];
+
+    for(int i = 0; i < tam_vet_triangulos; i++){
+        for(int j = 0; j < 3; j++){
+            if(x_min > vet_vertices[vet_triangulos[i][j]][0]) x_min = vet_vertices[vet_triangulos[i][j]][0];
+            if(y_min > vet_vertices[vet_triangulos[i][j]][0]) y_min = vet_vertices[vet_triangulos[i][j]][1];
+            if(z_min > vet_vertices[vet_triangulos[i][j]][0]) z_min = vet_vertices[vet_triangulos[i][j]][2];
+
+            if(x_max < vet_vertices[vet_triangulos[i][j]][0]) x_max = vet_vertices[vet_triangulos[i][j]][0];
+            if(y_max < vet_vertices[vet_triangulos[i][j]][0]) y_max = vet_vertices[vet_triangulos[i][j]][1];
+            if(z_max < vet_vertices[vet_triangulos[i][j]][0]) z_max = vet_vertices[vet_triangulos[i][j]][2];
+        }
+    }
+}
+
 /* GLUT callback Handlers */
 
 static void resize(int width, int height)
@@ -132,16 +157,18 @@ static void display(void)
 {
     const double t = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
     const double a = t*90.0;
+    int teste = 0;
 
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glMatrixMode(GL_PROJECTION);
     glColor3d(1,0,0);
-    int teste = 0;
+
     for(int i = 0; i < tam_vet_triangulos; i++){
         glBegin(GL_TRIANGLES);
         for(int j = 0; j < 3; j++){
-            glVertex3f( vet_vertices[vet_triangulos[i][j]][0],
-                    vet_vertices[vet_triangulos[i][j]][1],
-                    vet_vertices[vet_triangulos[i][j]][2] );
+            glVertex3f( vet_vertices[vet_triangulos[i][j]][0] - (x_min + x_max / 2),
+                    vet_vertices[vet_triangulos[i][j]][1] - (y_min + y_max / 2),
+                    vet_vertices[vet_triangulos[i][j]][2] - (z_min + z_max / 2));
 
             glNormal3f(vet_vertices[vet_triangulos[i][j]][3],
                     vet_vertices[vet_triangulos[i][j]][4],
@@ -212,6 +239,7 @@ int main(int argc, char *argv[])
 {
 //    lerArquivo("C:\\Users\\Aevo\\Documents\\Cristian\\Trabalho_TECG\\bunny.msh.txt");
     lerArquivo("C:\\Users\\Cristian\\Documents\\IFES\\bunny.msh.txt");
+    getMinMax(); // obtém as coordenadas (x,y,z) min e max
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
@@ -219,7 +247,6 @@ int main(int argc, char *argv[])
     glutInitWindowPosition(10, 10);     // Location of window in screen coordinates.
     glutCreateWindow("BUNNY");           // Parameter is window title.
 
-    //glutDisplayFunc(display);
 
     glutDisplayFunc(display);
     //glutReshapeFunc(resize);
@@ -247,7 +274,6 @@ int main(int argc, char *argv[])
     glMaterialfv(GL_FRONT, GL_DIFFUSE,   mat_diffuse);
     glMaterialfv(GL_FRONT, GL_SPECULAR,  mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
-
 
     glutMainLoop();
 
