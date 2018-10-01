@@ -28,8 +28,8 @@ static int slices = 16;
 static int stacks = 16;
 static int forma_display = 1;
 
-int tam_vet_triangulos = 69664;
-int tam_vet_vertices = 34834;
+int tam_vet_triangulos = 275084;
+int tam_vet_vertices = 168534;
 float vet_cores[] = {1, 0, 0};
 
 float x_min, y_min, z_min, x_max, y_max, z_max;
@@ -37,9 +37,9 @@ float x_min, y_min, z_min, x_max, y_max, z_max;
 int FPS = 0;
 float tempo_inicial = 0.0, tempo_final = 0.0;
 
-float vet_vertices[34834][3];
-int vet_triangulos[69664][3];
-float vet_normal[34834][3];
+float vet_vertices[168534][3];
+int vet_triangulos[275084][3];
+float vet_normal[168534][3];
 
 //Função que desenha em tela nas posições X e Y, um texto.
 static void printGL(int x, int y, char *str)
@@ -75,51 +75,45 @@ void lerArquivo(char* path){
     char linha[100];
     char* result;
     int n_vertices, n_triangulos;
+    int teste;
 
     if(arq == NULL){
         printf("Erro ao ler o arquivo.\n");
         return;
     }
+    fscanf(arq, "%d %d", &n_vertices, &n_triangulos);
 
-    result = fgets(linha, 100, arq);
-    n_vertices = atoi(strtok(result, " "));
-    n_triangulos = atoi(strtok(NULL, " "));
+    float x, y, z;
+    float nx, ny, nz;
+    int index;
+
 
     while(i < n_vertices){
-        char* aux_token;
-        int j = 0;
-        result = fgets(linha, 100, arq);
-        aux_token = strtok(result, " ");
-        aux_token = strtok(NULL, " ");
 
-        while(aux_token != NULL){
-            vet_vertices[i][j] = atof(aux_token);
-            if(j > 2){
-                vet_normal[i][j - 3] = atof(aux_token);
-            }else{
-                vet_vertices[i][j] = atof(aux_token);
-            }
-            aux_token = strtok(NULL, " ");
-            j++;
-        }
+        fscanf(arq, "%d %f %f %f %f %f %f", &index, &x, &y, &z, &nx, &ny, &nz);
+        vet_vertices[i][0] = x;
+        vet_vertices[i][1] = y;
+        vet_vertices[i][2] = z;
+
+        vet_normal[i][0] = nx;
+        vet_normal[i][1] = ny;
+        vet_normal[i][2] = nz;
+
         i++;
     }
 
     i = 0;
-    while(!feof(arq)){
-        char* aux_token;
-        int j = 0;
-        result = fgets(linha, 100, arq);
-        aux_token = strtok(result, " ");
-        aux_token = strtok(NULL, " ");
+    int tx, ty, tz;
+    while(i < n_triangulos){
+        fscanf(arq, "%d %d %d %d", &index, &tx, &ty, &tz);
+        vet_triangulos[i][0] = tx;
+        vet_triangulos[i][1] = ty;
+        vet_triangulos[i][2] = tz;
 
-        while(aux_token != NULL){
-            vet_triangulos[i][j] = atoi(aux_token);
-            aux_token = strtok(NULL, " ");
-            j++;
-        }
         i++;
     }
+
+    printf("END!\n");
 
 }
 
@@ -146,6 +140,21 @@ void getMinMax(){
     }
 }
 
+void printFile(){
+    for(int i = 0; i < tam_vet_vertices; i++){
+        //for(int j = 0; j < 3; j++){
+        printf("%d %f %f %f %f %f %f\n", i, vet_vertices[i][0], vet_vertices[i][1], vet_vertices[i][2], vet_normal[i][0], vet_normal[i][1], vet_normal[i][2]);
+        //}
+    }
+
+
+    for(int i = 0; i < tam_vet_triangulos; i++){
+        //for(int j = 0; j < 3; j++){
+        printf("%d %d %d %d\n", i, vet_triangulos[i][0], vet_triangulos[i][1], vet_triangulos[i][2]);
+        //}
+    }
+}
+
 /* GLUT callback Handlers */
 
 static void resize(int width, int height)
@@ -163,11 +172,22 @@ static void resize(int width, int height)
     glLoadIdentity() ;
 }
 
+// considerar a maior dimensão
+
+float caixa(){
+    float d = (z_max - z_min) / 2;
+    float retorno = ((y_max - y_min) / 2) / d;
+    printf("Caixa: %f", retorno);
+    return retorno;
+}
+
 static void display(void)
 {
     const double elapsed_time = glutGet(GLUT_ELAPSED_TIME);
     const double a = (elapsed_time/1000)*30.0;
     int teste = 0;
+
+    //float d_euclidiana = sqrt();
 
     tempo_inicial = elapsed_time - tempo_final;
     tempo_final = elapsed_time;
@@ -175,7 +195,7 @@ static void display(void)
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3d(1,0,0);
     glLoadIdentity(); // Limpa as tranformações anteriores
-    glTranslatef(0, 0, -2);
+    glTranslatef(0, 0, -500);
 
     glPushMatrix();
     glRotated(a,0,0.5,0); // Rotaciona de 1 em 1 grau em torno do eixo Y
@@ -226,7 +246,7 @@ static void draw(void)
 
     glColor3d(1,0,0);
     glLoadIdentity(); // Limpa as tranformações anteriores
-    glTranslatef(0, 0, -2);
+    glTranslatef(0, 0, -500);
 
     glEnableClientState(GL_NORMAL_ARRAY);
 //    glEnableClientState(GL_COLOR_ARRAY);
@@ -310,9 +330,12 @@ const GLfloat high_shininess[] = { 100.0f };
 int main(int argc, char *argv[])
 {
 //    lerArquivo("C:\\Users\\Aevo\\Documents\\Cristian\\Trabalho_TECG\\bunny.msh.txt");
-    //lerArquivo("C:\\Users\\20142bsi0054\\Documents\\TECG\\bunny.msh.txt");
-     lerArquivo("C:\\Users\\Cristian\\Documents\\IFES\\bunny.msh.txt");
+//    lerArquivo("C:\\Users\\20142bsi0054\\Documents\\TECG\\bunny.msh.txt");
+    lerArquivo("C:\\Users\\20142bsi0054\\Documents\\TECG\\DeLorean.msh");
+    //printFile();
+//     lerArquivo("C:\\Users\\Cristian\\Documents\\IFES\\bunny.msh.txt");
     getMinMax(); // obtém as coordenadas (x,y,z) min e max
+//    caixa();
 
 //    printf("X_MIN: %f, Y_MIN: %f, Z_MIN: %f\n", x_min, y_min, z_min);
 //    printf("Média: %f\n", (x_min + x_max) / 2);
