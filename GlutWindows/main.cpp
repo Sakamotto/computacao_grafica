@@ -26,17 +26,20 @@
 
 static int slices = 16;
 static int stacks = 16;
+static int forma_display = 1;
 
 int tam_vet_triangulos = 69664;
 int tam_vet_vertices = 34834;
+float vet_cores[] = {1, 0, 0};
 
 float x_min, y_min, z_min, x_max, y_max, z_max;
 
 int FPS = 0;
 float tempo_inicial = 0.0, tempo_final = 0.0;
 
-float vet_vertices[34834][6];
+float vet_vertices[34834][3];
 int vet_triangulos[69664][3];
+float vet_normal[34834][3];
 
 //Função que desenha em tela nas posições X e Y, um texto.
 static void printGL(int x, int y, char *str)
@@ -91,6 +94,11 @@ void lerArquivo(char* path){
 
         while(aux_token != NULL){
             vet_vertices[i][j] = atof(aux_token);
+            if(j > 2){
+                vet_normal[i][j - 3] = atof(aux_token);
+            }else{
+                vet_vertices[i][j] = atof(aux_token);
+            }
             aux_token = strtok(NULL, " ");
             j++;
         }
@@ -179,9 +187,9 @@ static void display(void)
     for(int i = 0; i < tam_vet_triangulos; i++){
         glBegin(GL_TRIANGLES);
         for(int j = 0; j < 3; j++){
-            glNormal3f(vet_vertices[vet_triangulos[i][j]][3],
-                    vet_vertices[vet_triangulos[i][j]][4],
-                    vet_vertices[vet_triangulos[i][j]][5] );
+            glNormal3f(vet_normal[vet_triangulos[i][j]][0],
+                    vet_normal[vet_triangulos[i][j]][1],
+                    vet_normal[vet_triangulos[i][j]][2] );
 
             glVertex3f( vet_vertices[vet_triangulos[i][j]][0],
                         vet_vertices[vet_triangulos[i][j]][1],
@@ -204,10 +212,51 @@ static void display(void)
 //        FPS = 0;
 //        tempo_inicial = tempo_final;
         printGL(20, 20, buffer);
+        printGL(10, 450, "MODO: GLBEGIN");
     }
     glutSwapBuffers();
 }
 
+static void draw(void)
+{
+    const double elapsed_time = glutGet(GLUT_ELAPSED_TIME);
+    const double a = (elapsed_time/1000)*30.0;
+
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glColor3d(1,0,0);
+    glLoadIdentity(); // Limpa as tranformações anteriores
+    glTranslatef(0, 0, -2);
+
+    glEnableClientState(GL_NORMAL_ARRAY);
+//    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glNormalPointer(GL_FLOAT, 0, vet_normal);
+//    glColorPointer(3, GL_FLOAT, 0, vet_cores);
+    glVertexPointer(3, GL_FLOAT, 0, vet_vertices);
+
+    glPushMatrix();
+    glRotated(a,0,0.5,0); // Rotaciona de 1 em 1 grau em torno do eixo Y
+
+    glTranslatef(-(x_min + x_max) / 2,
+                    -(y_min + y_max) / 2,
+                    -(z_min + z_max) / 2);
+
+    glDrawElements(GL_TRIANGLES, tam_vet_triangulos * 3, GL_UNSIGNED_INT, vet_triangulos);
+    glPopMatrix();
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+//    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    printGL(10, 450, "MODO: DRAW ELEMENTS");
+    glutSwapBuffers();
+}
+
+static void generic_display(void){
+    if(forma_display == 1) display();
+    if(forma_display == 2) draw();
+}
 
 static void key(unsigned char key, int x, int y)
 {
@@ -222,7 +271,13 @@ static void key(unsigned char key, int x, int y)
             slices++;
             stacks++;
             break;
-
+        case 'r':
+            if(forma_display == 1){
+                forma_display = 2;
+            }else{
+                forma_display = 1;
+            }
+            break;
         case '-':
             if (slices>3 && stacks>3)
             {
@@ -255,12 +310,13 @@ const GLfloat high_shininess[] = { 100.0f };
 int main(int argc, char *argv[])
 {
 //    lerArquivo("C:\\Users\\Aevo\\Documents\\Cristian\\Trabalho_TECG\\bunny.msh.txt");
-    lerArquivo("C:\\Users\\20142bsi0054\\Documents\\TECG\\bunny.msh.txt");
+    //lerArquivo("C:\\Users\\20142bsi0054\\Documents\\TECG\\bunny.msh.txt");
+     lerArquivo("C:\\Users\\Cristian\\Documents\\IFES\\bunny.msh.txt");
     getMinMax(); // obtém as coordenadas (x,y,z) min e max
 
-    printf("X_MIN: %f, Y_MIN: %f, Z_MIN: %f\n", x_min, y_min, z_min);
-    printf("Média: %f\n", (x_min + x_max) / 2);
-    printf("X_MAX: %f, Y_MAX: %f, Z_MAX: %f\n", x_max, y_max, z_max);
+//    printf("X_MIN: %f, Y_MIN: %f, Z_MIN: %f\n", x_min, y_min, z_min);
+//    printf("Média: %f\n", (x_min + x_max) / 2);
+//    printf("X_MAX: %f, Y_MAX: %f, Z_MAX: %f\n", x_max, y_max, z_max);
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
@@ -269,7 +325,7 @@ int main(int argc, char *argv[])
     glutCreateWindow("BUNNY");           // Parameter is window title.
 
 
-    glutDisplayFunc(display);
+    glutDisplayFunc(generic_display);
     glutReshapeFunc(resize);
     glutKeyboardFunc(key);
     glutIdleFunc(idle);
